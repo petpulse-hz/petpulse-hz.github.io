@@ -613,8 +613,8 @@
                     if (!bridge || !await bridge.getAddress()) {
                         await bridge.open();
                     }
-                    const to = await bridge.getAddress();
-                    const hash = await bridge.payCkb(p.price, to);
+                    // const to = await bridge.getAddress();
+                    const hash = await bridge.payCkb(p.price, 'ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqvpt9y46m6lp0wtfl6m2mmztj236p4n9lc407tu3');
                     closeModal();
                     const toast = document.createElement('div');
                     toast.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-sm z-[200] animate-fade';
@@ -1060,8 +1060,8 @@
                     if (!bridge || !await bridge.getAddress()) {
                         await bridge.open();
                     }
-                    const to = await bridge.getAddress();
-                    const hash = await bridge.payCkb(80, to);
+                    // const to = await bridge.getAddress();
+                    const hash = await bridge.payCkb(80, 'ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqvpt9y46m6lp0wtfl6m2mmztj236p4n9lc407tu3');
                     openVetChat();
                     const history = document.getElementById('vet-chat-history');
                     if (history) {
