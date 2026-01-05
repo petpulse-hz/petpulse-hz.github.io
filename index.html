@@ -1,13 +1,1210 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PetPulse - AI 智能宠物管家</title>
-    <script type="module" crossorigin src="/assets/index-CH3T3RI1.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BPeAftW-.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap');
+        body { font-family: 'Noto Sans SC', sans-serif; background-color: #FFF9F5; -webkit-tap-highlight-color: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .card-shadow { box-shadow: 0 4px 20px -2px rgba(93, 64, 55, 0.08); }
+        .animate-fade { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-overlay { background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); }
+        .loading-dots:after { content: ' .'; animation: dots 1.5s steps(5, end) infinite;}
+        @keyframes dots { 0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 40% { color: #D2B48C; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 60% { text-shadow: .25em 0 0 #D2B48C, .5em 0 0 rgba(0,0,0,0); } 80%, 100% { text-shadow: .25em 0 0 #D2B48C, .5em 0 0 #D2B48C; } }
+        .glass-morphism { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); }
+        .report-content h4 { font-weight: bold; margin-top: 12px; color: #FFF; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 4px; }
+        .report-content p { margin-top: 6px; line-height: 1.6; }
+        .report-content ul { list-style: disc; padding-left: 16px; margin-top: 6px; }
+    </style>
+  <script type="module" crossorigin src="/assets/index-Dfa-A0fX.js"></script>
+</head>
+<body class="bg-[#FFF9F5] text-[#5D4037]">
+
+    <div id="app" class="flex flex-col h-screen max-w-2xl mx-auto bg-white shadow-2xl relative overflow-hidden">
+        
+        <!-- Header -->
+        <header class="bg-white/90 backdrop-blur-md px-4 py-3 flex justify-between items-center border-b border-[#F1E0D6] z-50 sticky top-0">
+            <div class="flex items-center gap-1">
+                <span class="text-xl font-bold text-[#5D4037]">PetPulse</span>
+                <span id="page-title" class="text-[#D2B48C] text-[10px] font-bold bg-[#FFF9F5] px-2 py-0.5 rounded-full border border-[#F1E0D6]">AI 助手</span>
+            </div>
+            <div class="flex items-center gap-2" id="wallet-root">
+                <!-- React Wallet Component will be mounted here -->
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main id="main-content" class="flex-1 overflow-y-auto no-scrollbar pb-24">
+            <!-- 动态加载内容 -->
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bg-white border-t border-[#F1E0D6] pb-6 pt-2 px-6 flex justify-between items-center z-50 fixed bottom-0 w-full max-w-2xl">
+            <button onclick="switchTab('ask')" class="flex flex-col items-center gap-1 nav-btn" id="btn-ask">
+                <i data-lucide="message-square" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">问诊</span>
+            </button>
+            <button onclick="switchTab('health')" class="flex flex-col items-center gap-1 nav-btn" id="btn-health">
+                <i data-lucide="heart-pulse" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">健康</span>
+            </button>
+            <button onclick="switchTab('knowledge')" class="flex flex-col items-center gap-1 nav-btn" id="btn-knowledge">
+                <i data-lucide="book-open" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">科普</span>
+            </button>
+            <button onclick="switchTab('shop')" class="flex flex-col items-center gap-1 nav-btn" id="btn-shop">
+                <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">商城</span>
+            </button>
+            <button onclick="switchTab('me')" class="flex flex-col items-center gap-1 nav-btn" id="btn-me">
+                <i data-lucide="user" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">我的</span>
+            </button>
+        </nav>
+
+        <!-- Global Modal Container -->
+        <div id="modal" class="hidden fixed inset-0 z-[100] modal-overlay flex items-center justify-center p-6">
+            <div id="modal-content" class="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl animate-fade p-6 relative max-h-[85vh] overflow-y-auto">
+                <!-- 内容通过 JS 注入 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- React Global Mount Point -->
+    <div id="global-wallet-root"></div>
+
+    <script>
+        let GEMINI_MODEL = localStorage.getItem('petpulse_model') || "gemini-3-flash-preview";
+        let apiKey = localStorage.getItem('petpulse_api_key') || "";
+        const urlKey = new URLSearchParams(location.search).get('apiKey');
+        if (urlKey) {
+            apiKey = urlKey;
+            try { localStorage.setItem('petpulse_api_key', urlKey); } catch (e) {}
+        }
+
+        function saveApiKey(key) {
+            apiKey = key;
+            localStorage.setItem('petpulse_api_key', key);
+            location.reload();
+        }
+        function saveModel(model) {
+            GEMINI_MODEL = model;
+            localStorage.setItem('petpulse_model', model);
+        }
+        function saveApiSettings() {
+            const key = document.getElementById('api-key-input').value;
+            const model = document.getElementById('model-select').value;
+            saveModel(model);
+            saveApiKey(key);
+        }
+        
+        let currentTab = 'ask';
+        let activeSpecies = 'cat'; 
+        
+        // 钱包状态由 React 组件管理
+        
+        // 多宠物数据管理
+        let pets = [
+            { id: 1, name: "豆豆", species: "猫", breed: "英国短毛猫", age: "2岁", gender: "弟弟", weight: 4.1, avatar: "🐱" },
+            { id: 2, name: "来福", species: "狗", breed: "柴犬", age: "1岁", gender: "妹妹", weight: 8.5, avatar: "🐶" }
+        ];
+        let currentPetId = 1;
+        let petInfo = pets.find(p => p.id === currentPetId);
+
+        let chatMessages = [
+            { role: 'assistant', text: '您好！我是您的宠物AI医生。我已经准备好为您和您的宠物提供建议。最近它的精神状态怎么样？' }
+        ];
+        
+        let reminders = [
+            { id: 1, title: "体外驱虫", date: "2024-01-20", repeat: "每月一次", icon: "shield-check" },
+            { id: 2, title: "联苗接种", date: "2024-03-15", repeat: "每年一次", icon: "syringe" }
+        ];
+        let dailyLogs = [{ date: "2024-01-01", food: "正常", poop: "正常", spirit: "活泼" }];
+        let weightHistory = [
+            { date: "2023-11-01", weight: 3.2 },
+            { date: "2023-12-01", weight: 3.8 },
+            { date: "2024-01-01", weight: 4.1 }
+        ];
+
+        const knowledgeData = {
+            cat: [
+                { title: '猫咪消化系统', icon: 'flask-conical', desc: '急性肠胃炎与毛球症预防', color: 'blue', tag: '肠胃' },
+                { title: '猫咪应激反应', icon: 'zap', desc: '新成员加入与搬家指南', color: 'yellow', tag: '心理' },
+                { title: '猫传染性腹膜炎', icon: 'shield-alert', desc: '441治疗与早期识别', color: 'red', tag: '传染病' },
+                { title: '猫咪泌尿健康', icon: 'droplet', desc: '闭尿风险与饮水诱导', color: 'indigo', tag: '高发病' },
+                { title: '老年猫护理', icon: 'heart', desc: '7岁+饮食与关节养护', color: 'rose', tag: '生命周期' },
+                { title: '猫咪换季脱发', icon: 'scissors', desc: '正常换毛与皮肤病鉴别', color: 'orange', tag: '皮肤' }
+            ],
+            dog: [
+                { title: '狗狗急性肠胃炎', icon: 'soup', desc: '暴饮暴食与禁食人类食物', color: 'green', tag: '肠胃' },
+                { title: '犬类服从训练', icon: 'dog', desc: '随行、坐下等核心指令', color: 'purple', tag: '训练' },
+                { title: '狗狗皮肤真菌', icon: 'microscope', desc: '真菌/螨虫/湿疹鉴别', color: 'orange', tag: '皮肤' },
+                { title: '心丝虫预防', icon: 'activity', desc: '蚊虫叮咬与定期驱虫', color: 'red', tag: '寄生虫' },
+                { title: '老年犬痴呆预防', icon: 'brain', desc: '益智玩具与慢节奏散步', color: 'sky', tag: '生命周期' },
+                { title: '犬细小病毒预警', icon: 'thermometer', desc: '幼犬高发症状与应急处理', color: 'red', tag: '传染病' }
+            ]
+        };
+        
+        const foodTabooData = [
+            { name: '巧克力/可可制品', species: 'all', severity: '危险', risk: '可可碱、咖啡因', hazard: '中毒、心律失常、抽搐，严重可致死', examples: ['巧克力','可可粉','巧克力蛋糕'], aliases: ['巧克力','可可','可可粉','巧克力蛋糕'] },
+            { name: '洋葱/大蒜/葱类', species: 'all', severity: '危险', risk: '硫代硫酸盐', hazard: '破坏红细胞，导致溶血性贫血', examples: ['炒菜残渣','葱油','蒜蓉酱'], aliases: ['洋葱','大蒜','葱','蒜蓉','葱油'] },
+            { name: '葡萄/葡萄干', species: 'all', severity: '危险', risk: '', hazard: '急性肾衰竭（对部分个体极其敏感）', examples: ['提子','葡萄干面包'], aliases: ['葡萄','葡萄干','提子'] },
+            { name: '酒精及含酒精食品', species: 'all', severity: '危险', risk: '', hazard: '中枢神经抑制、低血糖、呼吸衰竭', examples: ['啤酒','料酒','酒心巧克力'], aliases: ['酒精','啤酒','料酒','酒心巧克力'] },
+            { name: '木糖醇（Xylitol）', species: 'all', severity: '危险', risk: '木糖醇', hazard: '低血糖、肝衰竭（对狗尤为致命）', examples: ['无糖口香糖','无糖饼干'], aliases: ['木糖醇','xylitol','无糖'] },
+            { name: '熟骨头', species: 'all', severity: '危险', risk: '', hazard: '易碎裂，造成消化道划伤或穿孔', examples: ['剩菜骨头','烧烤骨架','鸡骨','鱼骨'], aliases: ['鸡骨','鱼骨','熟骨头'] },
+            { name: '生鱼/生肉（长期或大量）', species: 'cat', severity: '慎用', risk: '硫胺素缺乏', hazard: '神经症状、抽搐', examples: [], aliases: ['生鱼','生肉'] },
+            { name: '牛奶及乳制品', species: 'cat', severity: '慎用', risk: '乳糖不耐受', hazard: '腹泻、呕吐', examples: ['牛奶','酸奶','奶酪'], aliases: ['牛奶','乳制品','奶酪','酸奶'] },
+            { name: '含咖啡因饮品', species: 'cat', severity: '危险', risk: '咖啡因', hazard: '中毒反应明显，耐受极低', examples: ['咖啡','茶','功能饮料'], aliases: ['咖啡','茶','功能饮料','能量饮料'] },
+            { name: '高脂肪食物', species: 'dog', severity: '危险', risk: '', hazard: '胰腺炎风险', examples: ['肥肉','炸鸡','火锅油脂'], aliases: ['高脂肪','肥肉','油脂','炸鸡'] },
+            { name: '大量坚果（夏威夷果）', species: 'dog', severity: '危险', risk: '', hazard: '神经系统异常、呕吐、无力', examples: ['夏威夷果','坚果混合'], aliases: ['坚果','夏威夷果','核桃','腰果'] },
+            { name: '生面团（含酵母）', species: 'dog', severity: '危险', risk: '酵母发酵', hazard: '胃内继续发酵，导致胀气、中毒', examples: ['披萨面团','包子生面'], aliases: ['生面团','酵母'] },
+            { name: '过咸食物', species: 'dog', severity: '慎用', risk: '钠离子过量', hazard: '钠离子中毒', examples: ['腌制食品','薯片','咸肉'], aliases: ['咸肉','腌制','盐'] },
+            { name: '苹果（去核）', species: 'all', severity: '安全', risk: '', hazard: '', examples: ['苹果'], aliases: ['苹果'] }
+        ];
+        
+        let shopCategory = '全部';
+        const shopProducts = [
+            { id: 'cat-food', name: '猫粮', price: 200, cat: '猫粮', icon: '🐱', desc: '全价成猫粮 1.5kg' },
+            { id: 'dog-food', name: '狗粮', price: 200, cat: '狗粮', icon: '🐶', desc: '全价成犬粮 2kg' },
+            { id: 'toy', name: '宠物玩具', price: 100, cat: '玩具', icon: '🎾', desc: '耐咬磨牙球' },
+            { id: 'snack', name: '宠物零食', price: 80, cat: '零食', icon: '🍖', desc: '冻干鸡肉 50g' }
+        ];
+
+        window.onload = () => { 
+            switchTab('ask');
+            window.openApiKeyModal = openApiKeyModal; 
+        };
+
+         function openApiKeyModal() {
+             openModal(`
+                 <div class="space-y-4">
+                     <h3 class="font-bold text-lg text-[#5D4037]">配置 AI API Key</h3>
+                     <p class="text-xs text-[#A1887F]">本应用使用 Google Gemini 模型。请配置 Key 以启用问诊功能。</p>
+                     <input type="password" id="api-key-input" value="${apiKey}" placeholder="输入 API Key" class="w-full p-3 border border-[#F1E0D6] rounded-xl bg-[#FFF9F5] outline-none text-sm">
+                     <div>
+                         <label class="text-[10px] text-[#A1887F] font-bold block mb-1">选择模型</label>
+                        <select id="model-select" class="w-full p-3 border border-[#F1E0D6] rounded-xl bg-[#FFF9F5] outline-none text-sm">
+                            <option value="gemini-2.0-flash" ${GEMINI_MODEL==='gemini-2.0-flash'?'selected':''}>gemini-2.0-flash (推荐)</option>
+                            <option value="gemini-3-flash-preview" ${GEMINI_MODEL==='gemini-3-flash-preview'?'selected':''}>gemini-3-flash-preview</option>
+                            <option value="gemini-3-pro-preview" ${GEMINI_MODEL==='gemini-3-pro-preview'?'selected':''}>gemini-3-pro-preview</option>
+                        </select>
+                    </div>
+                     <div class="flex gap-2">
+                         <a href="https://aistudio.google.com/app/apikey" target="_blank" class="flex-1 bg-gray-100 text-[#5D4037] py-3 rounded-xl font-bold text-xs flex items-center justify-center">获取免费 Key</a>
+                         <button onclick="saveApiSettings()" class="flex-1 bg-[#D2B48C] text-white py-3 rounded-xl font-bold text-sm">保存并重载</button>
+                     </div>
+                 </div>
+             `);
+         }
+
+         async function callAI(prompt, systemInstruction = "") {
+             if (!apiKey) {
+                 setTimeout(openApiKeyModal, 500);
+                 return "请先点击【API 设置】配置 Key，才能使用 AI 医生哦~";
+             }
+             const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+             try {
+                 const response = await fetch(url, {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({
+                         contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { thinkingConfig: { thinkingLevel: "low" } },
+                         systemInstruction: systemInstruction ? { parts: [{ text: systemInstruction }] } : undefined
+                     })
+                 });
+                 const data = await response.json();
+                if (data.error) {
+                    console.error("AI Error:", data.error);
+                    if (data.error.code === 429) {
+                        return "⚠️ 您的免费 API 调用额度已耗尽，请稍后重试，或点击右上角切换为 gemini-2.0-flash 模型。";
+                    }
+                    return `API 错误: ${data.error.message || '未知错误'}`;
+                }
+                 return data.candidates?.[0]?.content?.parts?.[0]?.text || "抱歉，我现在有点忙，请稍后再试。";
+             } catch (e) {
+                 return "连接 AI 失败，请检查网络或 Key 是否有效。";
+             }
+         }
+         
+         async function callAIWithParts(parts, systemInstruction = "") {
+             if (!apiKey) {
+                 setTimeout(openApiKeyModal, 500);
+                 return "请先配置 API Key 才能看懂照片哦~";
+             }
+             const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+             try {
+                 const response = await fetch(url, {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({
+                        contents: [{ parts }],
+                        systemInstruction: systemInstruction ? { parts: [{ text: systemInstruction }] } : undefined
+                    })
+                 });
+                 const data = await response.json();
+                 if (data.error) {
+                     console.error("AI Error:", data.error);
+                     return `API 错误: ${data.error.message || '未知错误'}`;
+                 }
+                 return data.candidates?.[0]?.content?.parts?.[0]?.text || "抱歉，我现在有点忙，请稍后再试。";
+             } catch (e) {
+                 return "连接 AI 失败，请检查网络或 Key 是否有效。";
+             }
+         }
+
+        // --- 问诊板块逻辑 ---
+        async function fetchPetGreeting() {
+            const greetingArea = document.getElementById('pet-greeting');
+            if (!greetingArea) return;
+            const quote = await callAI(`请以宠物${petInfo.name}的视角，给主人写一句简短温馨的中文寄语（20字以内）。`);
+            greetingArea.innerText = quote;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            chatMessages.push({ role: 'user', text });
+            renderAskTab();
+            input.value = '';
+
+            chatMessages.push({ role: 'assistant', text: '<span class="loading-dots">AI 正在深度分析中</span>' });
+            renderAskTab();
+
+            const sysPrompt = `你是一位宠物医生。根据用户描述提供：1. 可能病因 2. 护理建议 3. 就医预警。`;
+            const aiResponse = await callAI(text, sysPrompt);
+            
+            chatMessages.pop();
+            chatMessages.push({ role: 'assistant', text: aiResponse });
+            renderAskTab();
+        }
+        
+        function openImagePicker() {
+            const input = document.getElementById('image-input');
+            if (input) input.click();
+        }
+        
+        function handleImageSelected(e) {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            sendImage(file);
+            e.target.value = '';
+        }
+        
+        function readImage(file) {
+            return new Promise((resolve, reject) => {
+                const fr = new FileReader();
+                fr.onload = () => {
+                    const dataUrl = String(fr.result || '');
+                    const idx = dataUrl.indexOf(',');
+                    const base64 = idx >= 0 ? dataUrl.slice(idx + 1) : '';
+                    resolve({ base64, dataUrl, mime: file.type || 'image/jpeg' });
+                };
+                fr.onerror = reject;
+                fr.readAsDataURL(file);
+            });
+        }
+        
+        async function sendImage(file) {
+            const input = document.getElementById('chat-input');
+            const desc = input ? input.value.trim() : '';
+            const img = await readImage(file);
+            chatMessages.push({ role: 'user', image: img.dataUrl, text: desc });
+            renderAskTab();
+            if (input) input.value = '';
+            chatMessages.push({ role: 'assistant', text: '<span class="loading-dots">AI 正在深度分析中</span>' });
+            renderAskTab();
+            const parts = [];
+            if (desc) parts.push({ text: desc });
+            parts.push({ inline_data: { mime_type: img.mime, data: img.base64 } });
+            const sysPrompt = '你是一位宠物医生。请根据上传照片和描述提供：1. 可能病因 2. 护理建议 3. 就医预警。';
+            const ai = await callAIWithParts(parts, sysPrompt);
+            chatMessages.pop();
+            chatMessages.push({ role: 'assistant', text: ai });
+            renderAskTab();
+        }
+
+        function renderAskTab() {
+            const content = document.getElementById('main-content');
+            content.innerHTML = `
+                <div class="flex flex-col h-full bg-[#FFF9F5]">
+                    <div class="p-4">
+                        <div class="glass-morphism rounded-2xl p-3 flex items-center gap-3 border border-[#F1E0D6] animate-fade">
+                            <div class="w-10 h-10 bg-[#D2B48C] rounded-full flex items-center justify-center text-white font-bold text-xl">🐱</div>
+                            <div>
+                                <p class="text-[10px] text-[#A1887F] font-bold">豆豆今日碎碎念 ✨</p>
+                                <p id="pet-greeting" class="text-xs text-[#5D4037] mt-0.5 font-medium italic">"主人，今天也要开开心心哒~"</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
+                        ${chatMessages.map(m => `
+                            <div class="flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade">
+                                <div class="max-w-[85%] p-3 rounded-2xl text-sm ${m.role === 'user' ? 'bg-[#D2B48C] text-white shadow-lg' : 'bg-white text-[#5D4037] card-shadow border border-[#F1E0D6]'}">
+                                    ${m.image ? `<img src="${m.image}" class="w-40 h-40 object-cover rounded-xl mb-2">` : ''}
+                                    ${(m.text || '').replace(/\n/g, '<br>')}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="p-4 bg-white border-t border-[#F1E0D6]">
+                        <div class="flex gap-2">
+                            <input id="chat-input" type="text" placeholder="描述它的症状..." class="flex-1 bg-[#FFF9F5] rounded-xl px-4 py-3 text-sm outline-none border border-transparent focus:border-[#D2B48C]">
+                            <input id="image-input" type="file" accept="image/*" class="hidden" onchange="handleImageSelected(event)">
+                            <button onclick="openImagePicker()" class="bg-[#FFF9F5] text-[#5D4037] p-3 rounded-xl border border-[#F1E0D6]"><i data-lucide="image" class="w-5 h-5"></i></button>
+                            <button onclick="sendMessage()" class="bg-[#D2B48C] text-white p-3 rounded-xl"><i data-lucide="send" class="w-5 h-5"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            const container = document.getElementById('chat-container');
+            if (container) container.scrollTop = container.scrollHeight;
+            fetchPetGreeting();
+            lucide.createIcons();
+        }
+
+        // --- 健康管理逻辑 (含修复的按钮) ---
+        function openWeightInputModal() {
+            openModal(`
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-1 h-5 bg-[#D2B48C] rounded-full"></div>
+                        <h3 class="font-bold text-lg text-[#5D4037]">记录新体重</h3>
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-[10px] text-[#A1887F] font-bold block mb-1">测量日期</label>
+                            <input type="date" id="new-weight-date" value="${new Date().toISOString().split('T')[0]}" class="w-full bg-[#FFF9F5] border border-[#F1E0D6] rounded-xl px-4 py-3 text-sm outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-[#A1887F] font-bold block mb-1">体重数值 (kg)</label>
+                            <input type="number" id="new-weight-val" step="0.1" placeholder="例如: 4.5" class="w-full bg-[#FFF9F5] border border-[#F1E0D6] rounded-xl px-4 py-3 text-sm outline-none">
+                        </div>
+                    </div>
+                    <button onclick="saveNewWeight()" class="w-full mt-4 py-3 bg-[#D2B48C] text-white rounded-2xl font-bold text-sm shadow-md">确认保存</button>
+                </div>
+            `);
+        }
+
+        function saveNewWeight() {
+            const date = document.getElementById('new-weight-date').value;
+            const weight = parseFloat(document.getElementById('new-weight-val').value);
+            if (!weight || weight <= 0) return;
+
+            weightHistory.push({ date, weight });
+            weightHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
+            closeModal();
+            renderHealthTab();
+        }
+
+        async function generateAIHealthReport() {
+            const area = document.getElementById('ai-report-area');
+            area.innerHTML = `<div class="p-8 text-center text-[#D2B48C] text-xs font-bold"><div class="loading-dots mb-2">分析中</div>AI 正根据档案生成报告...</div>`;
+            
+            const prompt = `宠物：${JSON.stringify(petInfo)}, 体重：${JSON.stringify(weightHistory)}`;
+            const sysInstruction = `生成一份简短的宠物健康报告（现状、趋势、本周建议）。使用Markdown格式。`;
+            let aiReport = await callAI(prompt, sysInstruction);
+            
+            const formattedReport = aiReport
+                .replace(/^### (.*$)/gim, '<h4>$1</h4>')
+                .replace(/^## (.*$)/gim, '<h4>$1</h4>')
+                .replace(/^\* (.*$)/gim, '<li>$1</li>')
+                .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+                .replace(/\n/gim, '<br>');
+
+            area.innerHTML = `
+                <div class="p-5 bg-gradient-to-br from-[#D2B48C] to-[#C4A484] rounded-3xl text-white text-xs animate-fade card-shadow mt-4">
+                    <div class="report-content">${formattedReport}</div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function renderHealthTab() {
+            const content = document.getElementById('main-content');
+            content.innerHTML = `
+                <div class="p-4 space-y-6 animate-fade">
+                    <section>
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-bold text-[#5D4037] flex items-center gap-2"><i data-lucide="calendar" class="w-4 h-4 text-[#D2B48C]"></i> 健康提醒</h3>
+                        </div>
+                        <div class="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                            ${reminders.map(r => `
+                                <div class="flex-shrink-0 w-32 bg-white p-3 rounded-2xl border border-[#F1E0D6] card-shadow">
+                                    <i data-lucide="${r.icon}" class="w-4 h-4 text-[#D2B48C] mb-2"></i>
+                                    <p class="text-[11px] font-bold">${r.title}</p>
+                                    <p class="text-[9px] text-[#A1887F]">${r.date}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </section>
+
+                    <section class="bg-white p-4 rounded-3xl border border-[#F1E0D6] card-shadow">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-sm">体重监测 (kg)</h3>
+                            <button onclick="openWeightInputModal()" class="flex items-center gap-1 text-[10px] font-bold text-[#D2B48C] bg-[#FFF9F5] px-3 py-1.5 rounded-full border border-[#F1E0D6] active:scale-95 transition-all">
+                                <i data-lucide="plus-circle" class="w-3 h-3"></i> 手动录入
+                            </button>
+                        </div>
+                        <div class="h-40"><canvas id="weightChart"></canvas></div>
+                    </section>
+
+                    <section class="bg-white p-4 rounded-3xl border border-[#F1E0D6] card-shadow">
+                        <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-sm">日常监测记录</h3></div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="p-3 bg-[#FFF9F5] rounded-xl text-center">
+                                <span class="text-[9px] text-[#A1887F] block mb-1">饮食摄入</span>
+                                <div class="text-xs font-bold text-[#5D4037]">${dailyLogs[0].food}</div>
+                            </div>
+                            <div class="p-3 bg-[#FFF9F5] rounded-xl text-center">
+                                <span class="text-[9px] text-[#A1887F] block mb-1">排便观察</span>
+                                <div class="text-xs font-bold text-green-600">${dailyLogs[0].poop}</div>
+                            </div>
+                            <div class="p-3 bg-[#FFF9F5] rounded-xl text-center">
+                                <span class="text-[9px] text-[#A1887F] block mb-1">精神活力</span>
+                                <div class="text-xs font-bold text-orange-500">${dailyLogs[0].spirit}</div>
+                            </div>
+                        </div>
+                        <button onclick="generateAIHealthReport()" class="w-full mt-4 py-3 bg-[#D2B48C] text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-md">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i> 生成 AI 智能周报
+                        </button>
+                    </section>
+                    <div id="ai-report-area"></div>
+                </div>
+            `;
+            setTimeout(initChart, 100);
+            lucide.createIcons();
+        }
+
+        // --- 科普板块逻辑 ---
+        async function openKnowledgeDetail(topic) {
+            openModal(`
+                <div class="flex flex-col items-center justify-center py-10">
+                    <div class="loading-dots text-[#D2B48C] font-bold text-xl mb-2"></div>
+                    <p class="text-xs text-[#D2B48C] font-bold">正在调取云端知识库...</p>
+                </div>
+            `);
+            const aiDetail = await callAI(`请针对“${topic}”写一篇科普短文，包含症状、病因、预防。字数300左右。`);
+            openModal(`
+                <div class="flex items-center gap-2 mb-4">
+                    <div class="w-1 h-5 bg-[#D2B48C] rounded-full"></div>
+                    <h3 class="font-bold text-lg text-[#5D4037]">${topic}</h3>
+                </div>
+                <div class="text-sm leading-relaxed text-[#5D4037] space-y-3">
+                    ${aiDetail.replace(/\n/g, '<br>')}
+                </div>
+                <div class="mt-6 p-3 bg-red-50 rounded-xl border border-red-100">
+                    <p class="text-[10px] text-red-500 font-bold">⚠️ 科普仅供参考，不适请立即就医。</p>
+                </div>
+            `);
+        }
+
+        function renderKnowledgeTab() {
+            const content = document.getElementById('main-content');
+            const items = knowledgeData[activeSpecies];
+
+            content.innerHTML = `
+                <div class="p-4 space-y-6 animate-fade">
+                    <div class="flex p-1 bg-[#F1E0D6] rounded-2xl">
+                        <button onclick="switchKnowledgeSpecies('cat')" class="flex-1 py-2 rounded-xl text-xs font-bold transition-all ${activeSpecies === 'cat' ? 'bg-white text-[#D2B48C] shadow-sm' : 'text-[#A1887F]'}">猫咪频道</button>
+                        <button onclick="switchKnowledgeSpecies('dog')" class="flex-1 py-2 rounded-xl text-xs font-bold transition-all ${activeSpecies === 'dog' ? 'bg-white text-[#D2B48C] shadow-sm' : 'text-[#A1887F]'}">狗狗频道</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 pb-8">
+                        ${items.map(item => `
+                            <div onclick="openKnowledgeDetail('${item.title}')" class="bg-white p-4 rounded-2xl card-shadow border border-[#F1E0D6] active:scale-95 transition-all group">
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3 bg-opacity-10 ${
+                                    item.color === 'blue' ? 'bg-blue-500 text-blue-500' : 
+                                    item.color === 'yellow' ? 'bg-yellow-600 text-yellow-600' :
+                                    item.color === 'red' ? 'bg-red-500 text-red-500' :
+                                    item.color === 'indigo' ? 'bg-indigo-500 text-indigo-500' :
+                                    item.color === 'rose' ? 'bg-rose-500 text-rose-500' :
+                                    item.color === 'orange' ? 'bg-orange-500 text-orange-500' :
+                                    item.color === 'green' ? 'bg-green-500 text-green-500' :
+                                    item.color === 'purple' ? 'bg-purple-500 text-purple-500' : 'bg-gray-500 text-gray-500'
+                                }">
+                                    <i data-lucide="${item.icon}" class="w-5 h-5"></i>
+                                </div>
+                                <span class="text-[8px] px-1.5 py-0.5 rounded bg-[#FFF9F5] text-[#A1887F] font-bold border border-[#F1E0D6]">${item.tag}</span>
+                                <h4 class="text-xs font-bold mt-2 text-[#5D4037]">${item.title}</h4>
+                                <p class="text-[9px] text-[#A1887F] mt-1 line-clamp-2 leading-relaxed">${item.desc}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function switchKnowledgeSpecies(species) { activeSpecies = species; renderKnowledgeTab(); }
+        
+        function renderShopTab() {
+            const content = document.getElementById('main-content');
+            const cats = ['全部','猫粮','狗粮','玩具','零食'];
+            const items = shopProducts.filter(p => shopCategory === '全部' ? true : p.cat === shopCategory);
+            content.innerHTML = `
+                <div class="p-4 space-y-6 animate-fade">
+                    <div class="flex p-1 bg-[#F1E0D6] rounded-2xl">
+                        ${cats.map(c => `
+                            <button onclick="switchShopCategory('${c}')" class="flex-1 py-2 rounded-xl text-xs font-bold transition-all ${shopCategory === c ? 'bg-white text-[#D2B48C] shadow-sm' : 'text-[#A1887F]'}">${c}</button>
+                        `).join('')}
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 pb-8">
+                        ${items.map(p => `
+                            <div class="bg-white p-4 rounded-2xl card-shadow border border-[#F1E0D6]">
+                                <div class="text-3xl mb-2">${p.icon}</div>
+                                <h4 class="text-xs font-bold text-[#5D4037]">${p.name}</h4>
+                                <p class="text-[9px] text-[#A1887F] mt-1">${p.desc}</p>
+                                <div class="flex justify-between items-center mt-2">
+                                    <span class="text-sm font-bold text-[#D2B48C]">${p.price} CKB</span>
+                                    <button onclick="openShopPay('${p.id}')" class="text-[10px] bg-[#D2B48C] text-white px-2 py-1 rounded-lg active:scale-95 transition-transform">购买</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+        
+        function switchShopCategory(c) { shopCategory = c; renderShopTab(); }
+        
+        function openShopPay(pid) {
+            const p = shopProducts.find(x => x.id === pid);
+            openModal(`
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2">
+                        <div class="text-2xl">${p.icon}</div>
+                        <div>
+                            <h3 class="font-bold text-lg text-[#5D4037]">${p.name}</h3>
+                            <p class="text-[10px] text-[#A1887F]">${p.desc}</p>
+                        </div>
+                    </div>
+                    <div class="bg-[#FFF9F5] p-4 rounded-xl border border-[#F1E0D6]">
+                        <div class="flex justify-between text-sm"><span>商品金额</span><span>${p.price.toFixed(2)} CKB</span></div>
+                        <div class="flex justify-between text-sm"><span>运费</span><span>0.00 CKB</span></div>
+                        <div class="flex justify-between text-sm font-bold text-[#5D4037] mt-2"><span>合计</span><span>${p.price.toFixed(2)} CKB</span></div>
+                    </div>
+                    <button onclick="confirmShopPay('${p.id}')" class="w-full bg-[#2ECC71] text-white py-3 rounded-xl font-bold">立即支付</button>
+                </div>
+            `);
+        }
+        
+        function confirmShopPay(pid) {
+            const bridge = window.cccBridge;
+            const p = shopProducts.find(x => x.id === pid);
+            if (!p) return;
+            closeModal();
+            openModal(`
+                <div class="flex flex-col items-center justify-center py-10">
+                    <div class="loading-dots text-[#2ECC71] font-bold text-xl mb-2"></div>
+                    <p class="text-xs text-[#5D4037]">正在支付...</p>
+                </div>
+            `);
+            (async () => {
+                try {
+                    if (!bridge || !await bridge.getAddress()) {
+                        await bridge.open();
+                    }
+                    const to = await bridge.getAddress();
+                    const hash = await bridge.payCkb(p.price, to);
+                    closeModal();
+                    const toast = document.createElement('div');
+                    toast.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-sm z-[200] animate-fade';
+                    toast.innerText = `✅ 支付成功，交易哈希: ${String(hash).slice(0,10)}...`;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 2500);
+                } catch (e) {
+                    closeModal();
+                    const toast = document.createElement('div');
+                    toast.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-sm z-[200] animate-fade';
+                    toast.innerText = '❌ 支付失败，请检查钱包余额或网络';
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 2500);
+                }
+            })();
+        }
+        
+        function openWalletModal() {
+            const status = walletConnected ? '已连接' : '未连接';
+            const providers = ['MetaMask','Phantom','OKX','WalletConnect'];
+            openModal(`
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="wallet" class="w-5 h-5 text-[#D2B48C]"></i>
+                        <h3 class="font-bold text-lg text-[#5D4037]">连接钱包</h3>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-[#FFF9F5] border border-[#F1E0D6] text-[#A1887F]">${status}</span>
+                    </div>
+                    ${walletConnected ? `
+                        <div class="bg-[#FFF9F5] p-4 rounded-xl border border-[#F1E0D6]">
+                            <div class="text-xs text-[#A1887F]">当前钱包</div>
+                            <div class="text-sm font-bold text-[#5D4037] mt-1">${walletProvider}</div>
+                            <div class="text-[10px] mt-2 break-all">${walletAddress}</div>
+                            <div class="flex gap-2 mt-3">
+                                <button onclick="copyWalletAddress()" class="flex-1 bg-[#D2B48C] text-white py-2 rounded-xl text-xs font-bold">复制地址</button>
+                                <button onclick="disconnectWallet()" class="flex-1 bg-red-500 text-white py-2 rounded-xl text-xs font-bold">断开连接</button>
+                            </div>
+                        </div>
+                    ` : `
+                        <div class="grid grid-cols-2 gap-2">
+                            ${providers.map(p => `
+                                <button onclick="connectWallet('${p}')" class="p-3 bg-white rounded-xl border border-[#F1E0D6] text-xs font-bold text-[#5D4037] active:scale-95 transition-transform">${p}</button>
+                            `).join('')}
+                        </div>
+                    `}
+                </div>
+            `);
+            lucide.createIcons();
+        }
+        
+        function connectWallet(p) {
+            walletProvider = p;
+            walletAddress = '0x' + Array.from(crypto.getRandomValues(new Uint8Array(20))).map(b => b.toString(16).padStart(2,'0')).join('');
+            walletConnected = true;
+            closeModal();
+            openWalletModal();
+        }
+        
+        function disconnectWallet() {
+            walletConnected = false;
+            walletProvider = '';
+            walletAddress = '';
+            closeModal();
+            openWalletModal();
+        }
+        
+        function copyWalletAddress() {
+            if (!walletAddress) return;
+            navigator.clipboard.writeText(walletAddress).then(() => {
+                const toast = document.createElement('div');
+                toast.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-sm z-[200] animate-fade';
+                toast.innerText = '📋 已复制钱包地址';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 1500);
+            });
+        }
+
+        // --- 我的板块逻辑 ---
+        function renderMeTab() {
+            const content = document.getElementById('main-content');
+            content.innerHTML = `
+                <div class="p-4 space-y-6 animate-fade pb-24">
+                    <!-- 宠物管理卡片 -->
+                    <section>
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-bold text-[#5D4037] flex items-center gap-2">
+                                <i data-lucide="cat" class="w-4 h-4 text-[#D2B48C]"></i> 我的爱宠
+                            </h3>
+                            <button onclick="openAddPetModal()" class="text-[10px] bg-[#D2B48C] text-white px-2 py-1 rounded-lg shadow-sm active:scale-95 transition-transform">+ 添加</button>
+                        </div>
+                        <div class="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                            ${pets.map(p => `
+                                <div onclick="switchPet(${p.id})" class="relative flex-shrink-0 w-36 p-3 rounded-2xl border transition-all ${currentPetId === p.id ? 'bg-[#D2B48C] text-white border-[#D2B48C] shadow-lg scale-105' : 'bg-white text-[#5D4037] border-[#F1E0D6] card-shadow'}">
+                                    <div class="absolute top-2 right-2" onclick="event.stopPropagation(); openEditPetModal(${p.id})">
+                                        <i data-lucide="edit-2" class="w-3 h-3 ${currentPetId === p.id ? 'text-white' : 'text-[#D2B48C]'}"></i>
+                                    </div>
+                                    <div class="text-3xl mb-2">${p.avatar}</div>
+                                    <div class="font-bold text-sm truncate">${p.name}</div>
+                                    <div class="text-[10px] opacity-80 truncate">${p.breed} · ${p.age}</div>
+                                    ${currentPetId === p.id ? '<div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-10 h-1 bg-white/30 rounded-full"></div>' : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </section>
+
+                    <!-- 实用工具箱 -->
+                    <section class="bg-white p-4 rounded-3xl border border-[#F1E0D6] card-shadow">
+                        <h3 class="font-bold text-sm mb-4 text-[#5D4037]">实用工具</h3>
+                        <div class="grid grid-cols-3 gap-3">
+                            <button onclick="openTool('age')" class="flex flex-col items-center gap-2 p-3 bg-[#FFF9F5] rounded-xl hover:bg-[#F1E0D6] transition-colors">
+                                <div class="w-8 h-8 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center"><i data-lucide="calculator" class="w-4 h-4"></i></div>
+                                <span class="text-[10px] font-bold text-[#5D4037]">年龄换算</span>
+                            </button>
+                            <button onclick="openTool('food')" class="flex flex-col items-center gap-2 p-3 bg-[#FFF9F5] rounded-xl hover:bg-[#F1E0D6] transition-colors">
+                                <div class="w-8 h-8 bg-red-100 text-red-500 rounded-full flex items-center justify-center"><i data-lucide="ban" class="w-4 h-4"></i></div>
+                                <span class="text-[10px] font-bold text-[#5D4037]">禁忌查询</span>
+                            </button>
+                            <button onclick="openTool('calc')" class="flex flex-col items-center gap-2 p-3 bg-[#FFF9F5] rounded-xl hover:bg-[#F1E0D6] transition-colors">
+                                <div class="w-8 h-8 bg-green-100 text-green-500 rounded-full flex items-center justify-center"><i data-lucide="scale" class="w-4 h-4"></i></div>
+                                <span class="text-[10px] font-bold text-[#5D4037]">喂食计算</span>
+                            </button>
+                            <button onclick="openApiKeyModal()" class="flex flex-col items-center gap-2 p-3 bg-[#FFF9F5] rounded-xl hover:bg-[#F1E0D6] transition-colors">
+                                <div class="w-8 h-8 bg-purple-100 text-purple-500 rounded-full flex items-center justify-center"><i data-lucide="key" class="w-4 h-4"></i></div>
+                                <span class="text-[10px] font-bold text-[#5D4037]">API 设置</span>
+                            </button>
+                        </div>
+                    </section>
+
+                    <!-- 医疗服务 -->
+                    <section class="space-y-3">
+                        <h3 class="font-bold text-sm text-[#5D4037]">医疗服务</h3>
+                        
+                        <div onclick="openHospitalList()" class="bg-white p-4 rounded-3xl border border-[#F1E0D6] card-shadow flex items-center gap-4 active:scale-95 transition-transform">
+                            <div class="w-12 h-12 bg-rose-100 text-rose-500 rounded-2xl flex items-center justify-center">
+                                <i data-lucide="map-pin" class="w-6 h-6"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="font-bold text-sm text-[#5D4037]">附近宠物医院</h4>
+                                <p class="text-[10px] text-[#A1887F]">查看周边 3km 内认证医院</p>
+                            </div>
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-[#D2B48C]"></i>
+                        </div>
+
+                        <div onclick="openOnlineVet()" class="bg-gradient-to-r from-[#D2B48C] to-[#C4A484] p-4 rounded-3xl card-shadow flex items-center gap-4 text-white active:scale-95 transition-transform">
+                            <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                                <i data-lucide="stethoscope" class="w-6 h-6"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="font-bold text-sm">宠物医师在线</h4>
+                                <p class="text-[10px] opacity-90">专业医师 24h 实时问诊</p>
+                            </div>
+                            <span class="text-[10px] bg-white/20 px-2 py-1 rounded-lg">LIVE</span>
+                        </div>
+                    </section>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function switchPet(id) {
+            currentPetId = id;
+            petInfo = pets.find(p => p.id === id);
+            renderMeTab();
+            // 同时更新其他tab的数据上下文
+            // 比如刷新问诊页的欢迎语等（如果当前在问诊页，但这里是在'Me'页切换，所以下次进问诊页会自动刷新）
+        }
+
+        function openAddPetModal() {
+            openModal(`
+                <div class="space-y-4">
+                    <h3 class="font-bold text-lg text-[#5D4037]">添加新宠物</h3>
+                    <div class="space-y-3">
+                        <input id="pet-name" placeholder="宠物昵称" class="w-full bg-[#FFF9F5] p-3 rounded-xl text-sm border border-[#F1E0D6]">
+                        <div class="flex gap-2">
+                            <select id="pet-species" class="flex-1 bg-[#FFF9F5] p-3 rounded-xl text-sm border border-[#F1E0D6]">
+                                <option value="猫">猫</option>
+                                <option value="狗">狗</option>
+                            </select>
+                            <select id="pet-gender" class="flex-1 bg-[#FFF9F5] p-3 rounded-xl text-sm border border-[#F1E0D6]">
+                                <option value="弟弟">弟弟</option>
+                                <option value="妹妹">妹妹</option>
+                            </select>
+                        </div>
+                        <input id="pet-breed" placeholder="品种 (如: 英短)" class="w-full bg-[#FFF9F5] p-3 rounded-xl text-sm border border-[#F1E0D6]">
+                        <input id="pet-age" placeholder="年龄 (如: 1岁)" class="w-full bg-[#FFF9F5] p-3 rounded-xl text-sm border border-[#F1E0D6]">
+                        <input id="pet-weight" type="number" placeholder="体重 (kg)" class="w-full bg-[#FFF9F5] p-3 rounded-xl text-sm border border-[#F1E0D6]">
+                    </div>
+                    <button onclick="savePet()" class="w-full bg-[#D2B48C] text-white py-3 rounded-xl font-bold">保存档案</button>
+                </div>
+            `);
+        }
+
+        function openEditPetModal(id) {
+            const p = pets.find(x => x.id === id);
+            openModal(`
+                <div class="space-y-4">
+                    <h3 class="font-bold text-lg text-[#5D4037]">编辑档案</h3>
+                    <div class="space-y-3">
+                        <input id="pet-name" value="${p.name}" class="w-full bg-[#FFF9F5] p-3 rounded-xl text-sm border border-[#F1E0D6]">
+                        <div class="flex gap-2">
+                            <select id="pet-species" class="flex-1 bg-[#FFF9F5] p-3 rounded-xl text-sm border border-[#F1E0D6]">
+                                <option value="猫" ${p.species === '猫' ? 'selected' : ''}>猫</option>
+                                <option value="狗" ${p.species === '狗' ? 'selected' : ''}>狗</option>
+                            </select>
+                            <select id="pet-gender" class="flex-1 bg-[#FFF9F5] p-3 rounded-xl text-sm border border-[#F1E0D6]">
+                                <option value="弟弟" ${p.gender === '弟弟' ? 'selected' : ''}>弟弟</option>
+                                <option value="妹妹" ${p.gender === '妹妹' ? 'selected' : ''}>妹妹</option>
+                            </select>
+                        </div>
+                        <input id="pet-breed" value="${p.breed}" class="w-full bg-[#FFF9F5] p-3 rounded-xl text-sm border border-[#F1E0D6]">
+                        <input id="pet-age" value="${p.age}" class="w-full bg-[#FFF9F5] p-3 rounded-xl text-sm border border-[#F1E0D6]">
+                        <input id="pet-weight" value="${p.weight}" type="number" class="w-full bg-[#FFF9F5] p-3 rounded-xl text-sm border border-[#F1E0D6]">
+                    </div>
+                    <button onclick="savePet(${id})" class="w-full bg-[#D2B48C] text-white py-3 rounded-xl font-bold">更新档案</button>
+                </div>
+            `);
+        }
+
+        function savePet(editId = null) {
+            const name = document.getElementById('pet-name').value;
+            const species = document.getElementById('pet-species').value;
+            const breed = document.getElementById('pet-breed').value;
+            const age = document.getElementById('pet-age').value;
+            const weight = parseFloat(document.getElementById('pet-weight').value) || 0;
+            const gender = document.getElementById('pet-gender').value;
+            
+            if (!name) return alert('请输入昵称');
+
+            if (editId) {
+                const p = pets.find(x => x.id === editId);
+                Object.assign(p, { name, species, breed, age, weight, gender, avatar: species === '猫' ? '🐱' : '🐶' });
+            } else {
+                pets.push({
+                    id: Date.now(),
+                    name, species, breed, age, weight, gender,
+                    avatar: species === '猫' ? '🐱' : '🐶'
+                });
+            }
+            closeModal();
+            renderMeTab();
+        }
+
+        // 工具逻辑
+        function openTool(type) {
+            if (type === 'age') {
+                openModal(`
+                    <div class="text-center space-y-4">
+                        <h3 class="font-bold text-lg text-[#5D4037]">宠物年龄换算</h3>
+                        <p class="text-xs text-[#A1887F]">宠物 1 岁 ≈ 人类 15-18 岁</p>
+                        <div class="bg-[#FFF9F5] p-4 rounded-2xl border border-[#F1E0D6]">
+                            <label class="block text-xs font-bold text-[#A1887F] mb-2">输入宠物年龄 (岁)</label>
+                            <input type="number" id="calc-age-input" class="w-20 text-center p-2 rounded-lg border border-[#F1E0D6] mb-4" oninput="calculateHumanAge(this.value)">
+                            <div class="text-3xl font-bold text-[#D2B48C]" id="calc-age-result">--</div>
+                            <div class="text-xs text-[#A1887F]">人类年龄</div>
+                        </div>
+                    </div>
+                `);
+            } else if (type === 'food') {
+                openModal(`
+                    <div class="h-[60vh] flex flex-col">
+                        <h3 class="font-bold text-lg text-[#5D4037] mb-3">食物禁忌查询</h3>
+                        <input type="text" placeholder="输入食物名称 (如: 葡萄)" class="w-full p-3 rounded-xl border border-[#F1E0D6] mb-3 bg-[#FFF9F5]" oninput="searchFood(this.value)">
+                        <div id="food-results" class="flex-1 overflow-y-auto space-y-2"></div>
+                    </div>
+                `);
+                setTimeout(() => searchFood(''), 0);
+            } else if (type === 'calc') {
+                openModal(`
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-lg text-[#5D4037]">每日喂食计算器</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-xs font-bold text-[#A1887F]">宠物体重 (kg)</label>
+                                <input type="number" id="calc-weight" value="${petInfo.weight}" class="w-full p-2 border border-[#F1E0D6] rounded-lg bg-[#FFF9F5]">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-[#A1887F]">活动量</label>
+                                <select id="calc-activity" class="w-full p-2 border border-[#F1E0D6] rounded-lg bg-[#FFF9F5]">
+                                    <option value="1.2">低 (室内少动)</option>
+                                    <option value="1.4">中 (每日散步)</option>
+                                    <option value="1.6">高 (经常奔跑)</option>
+                                </select>
+                            </div>
+                            <button onclick="calculateFood()" class="w-full bg-[#D2B48C] text-white py-2 rounded-xl font-bold">开始计算</button>
+                            <div id="calc-food-result" class="hidden p-4 bg-[#FFF9F5] rounded-xl border border-[#F1E0D6] text-center">
+                                <span class="text-xs text-[#A1887F]">每日建议热量</span>
+                                <div class="text-2xl font-bold text-[#5D4037] my-1"><span id="cal-val"></span> kcal</div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+            }
+        }
+
+        function calculateHumanAge(age) {
+            const val = parseFloat(age);
+            if (!val) return;
+            // 简单估算公式
+            let human = val <= 1 ? val * 15 : 15 + 9 + (val - 2) * 4;
+            document.getElementById('calc-age-result').innerText = Math.round(human);
+        }
+
+        function searchFood(query) {
+            const list = document.getElementById('food-results');
+            const speciesKey = petInfo.species === '猫' ? 'cat' : 'dog';
+            const q = (query || '').trim();
+            if (!q) {
+                const defaults = foodTabooData.filter(i => i.species === 'all' || i.species === speciesKey);
+                list.innerHTML = defaults.map(renderFoodItem).join('');
+                return;
+            }
+            const res = foodTabooData.filter(i => {
+                const hay = [i.name, i.hazard, i.risk, ...(i.aliases || []), ...(i.examples || [])].join(' ');
+                return hay.includes(q);
+            });
+            list.innerHTML = res.length ? res.map(renderFoodItem).join('') : '<div class="text-center text-xs text-gray-400 mt-4">暂无收录</div>';
+        }
+        
+        function severityClass(s) {
+            if (s === '危险') return 'bg-red-50 text-red-600 border-red-100';
+            if (s === '慎用') return 'bg-yellow-50 text-yellow-600 border-yellow-100';
+            return 'bg-green-50 text-green-600 border-green-100';
+        }
+        
+        function renderFoodItem(i) {
+            const speciesKey = i.species === 'all' ? '通用' : (i.species === 'cat' ? '猫' : '狗');
+            return `
+                <div class="p-3 rounded-xl text-xs font-bold border ${severityClass(i.severity)}">
+                    <div class="flex justify-between items-center">
+                        <span>${i.name}</span>
+                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-white/50">${i.severity}</span>
+                    </div>
+                    <div class="mt-1 text-[10px] font-normal opacity-80">适用：${speciesKey}</div>
+                    ${i.risk ? `<div class="mt-1 text-[10px] font-normal">风险成分：${i.risk}</div>` : ''}
+                    ${i.hazard ? `<div class="mt-1 text-[10px] font-normal">危害：${i.hazard}</div>` : ''}
+                    ${i.examples && i.examples.length ? `<div class="mt-1 text-[10px] font-normal">示例：${i.examples.join('、')}</div>` : ''}
+                </div>
+            `;
+        }
+
+        function calculateFood() {
+            const w = parseFloat(document.getElementById('calc-weight').value);
+            const factor = parseFloat(document.getElementById('calc-activity').value);
+            if (!w) return;
+            const rer = 70 * Math.pow(w, 0.75);
+            const mer = rer * factor;
+            document.getElementById('cal-val').innerText = Math.round(mer);
+            document.getElementById('calc-food-result').classList.remove('hidden');
+        }
+
+        // 医院与在线问诊
+        function openHospitalList() {
+            const hospitals = [
+                { id: 1, name: "爱心宠物总院", dist: "0.8km", score: 4.9, tags: ["24h急诊", "猫科专科"] },
+                { id: 2, name: "瑞鹏宠物医院", dist: "1.5km", score: 4.8, tags: ["疫苗定点", "骨科"] },
+                { id: 3, name: "芭比堂动物医院", dist: "2.2km", score: 4.7, tags: ["中兽医", "洗护"] }
+            ];
+            openModal(`
+                <div class="h-[60vh] flex flex-col">
+                    <h3 class="font-bold text-lg text-[#5D4037] mb-4">周边医院预约</h3>
+                    <div class="flex-1 overflow-y-auto space-y-3">
+                        ${hospitals.map(h => `
+                            <div class="bg-white border border-[#F1E0D6] p-3 rounded-2xl flex justify-between items-center shadow-sm">
+                                <div>
+                                    <h4 class="font-bold text-sm text-[#5D4037]">${h.name}</h4>
+                                    <div class="flex gap-2 mt-1">
+                                        <span class="text-[10px] text-[#D2B48C] bg-[#FFF9F5] px-1 rounded border border-[#F1E0D6]">${h.dist}</span>
+                                        <span class="text-[10px] text-orange-400">★ ${h.score}</span>
+                                    </div>
+                                    <div class="flex gap-1 mt-2">
+                                        ${h.tags.map(t => `<span class="text-[9px] bg-gray-100 text-gray-500 px-1 rounded">${t}</span>`).join('')}
+                                    </div>
+                                </div>
+                                <button onclick="openAppointment('${h.name}')" class="bg-[#D2B48C] text-white text-xs px-3 py-1.5 rounded-lg font-bold">预约</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `);
+        }
+
+        function openAppointment(hName) {
+            openModal(`
+                <div class="space-y-4">
+                    <h3 class="font-bold text-lg text-[#5D4037]">预约 - ${hName}</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs font-bold text-[#A1887F]">到店时间</label>
+                            <input type="datetime-local" class="w-full p-2 border border-[#F1E0D6] rounded-lg bg-[#FFF9F5] mt-1">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-[#A1887F]">预约项目</label>
+                            <div class="grid grid-cols-2 gap-2 mt-1">
+                                <label class="flex items-center gap-2 p-2 border border-[#F1E0D6] rounded-lg"><input type="radio" name="srv" checked> <span>疫苗接种</span></label>
+                                <label class="flex items-center gap-2 p-2 border border-[#F1E0D6] rounded-lg"><input type="radio" name="srv"> <span>常规体检</span></label>
+                                <label class="flex items-center gap-2 p-2 border border-[#F1E0D6] rounded-lg"><input type="radio" name="srv"> <span>绝育咨询</span></label>
+                                <label class="flex items-center gap-2 p-2 border border-[#F1E0D6] rounded-lg"><input type="radio" name="srv"> <span>洗护美容</span></label>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="confirmAppointment()" class="w-full bg-[#D2B48C] text-white py-3 rounded-xl font-bold mt-2">确认预约</button>
+                </div>
+            `);
+        }
+
+        function confirmAppointment() {
+            closeModal();
+            // 简单Toast模拟
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-sm z-[200] animate-fade';
+            toast.innerText = '✅ 预约成功！医院会尽快联系您确认。';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        function openOnlineVet() {
+            openModal(`
+                <div class="text-center py-6 space-y-4">
+                    <div class="w-16 h-16 bg-[#D2B48C] rounded-full mx-auto flex items-center justify-center text-white text-2xl">👨‍⚕️</div>
+                    <div>
+                        <h3 class="font-bold text-lg text-[#5D4037]">在线专家问诊</h3>
+                        <p class="text-xs text-[#A1887F] mt-1">当前排队人数: 0 人</p>
+                    </div>
+                    <div class="bg-[#FFF9F5] p-4 rounded-xl border border-[#F1E0D6] text-left mx-4">
+                        <div class="flex justify-between text-sm mb-2"><span>问诊费</span> <span>80 CKB</span></div>
+                        <div class="flex justify-between text-sm font-bold text-[#5D4037]"><span>合计</span> <span>80 CKB</span></div>
+                    </div>
+                    <button onclick="payAndStartConsultation()" class="w-11/12 bg-[#2ECC71] text-white py-3 rounded-xl font-bold shadow-lg shadow-green-200">立即支付并咨询</button>
+                </div>
+            `);
+        }
+
+        function payAndStartConsultation() {
+            const bridge = window.cccBridge;
+            closeModal();
+            openModal(`
+                <div class="flex flex-col items-center justify-center py-10">
+                    <div class="loading-dots text-[#2ECC71] font-bold text-xl mb-2"></div>
+                    <p class="text-xs text-[#5D4037]">正在安全支付...</p>
+                </div>
+            `);
+            (async () => {
+                try {
+                    if (!bridge || !await bridge.getAddress()) {
+                        await bridge.open();
+                    }
+                    const to = await bridge.getAddress();
+                    const hash = await bridge.payCkb(80, to);
+                    openVetChat();
+                    const history = document.getElementById('vet-chat-history');
+                    if (history) {
+                        history.innerHTML = `<div class="text-center text-[10px] text-gray-400 my-2">- 支付成功，交易哈希: ${String(hash).slice(0,10)}... 问诊开始 -</div>` + history.innerHTML;
+                    }
+                } catch (e) {
+                    closeModal();
+                    const toast = document.createElement('div');
+                    toast.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-sm z-[200] animate-fade';
+                    toast.innerText = '❌ 支付失败，请检查钱包余额或网络';
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 2500);
+                }
+            })();
+        }
+
+        function openVetChat() {
+            // 全屏模拟聊天界面
+            const modal = document.getElementById('modal');
+            const content = document.getElementById('modal-content');
+            
+            // 覆盖整个Modal样式以模拟全屏聊天
+            content.innerHTML = `
+                <div class="flex flex-col h-[80vh]">
+                    <div class="flex items-center justify-between border-b border-[#F1E0D6] pb-3 mb-2">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 bg-[#D2B48C] rounded-full flex items-center justify-center text-white text-xs">👨‍⚕️</div>
+                            <div>
+                                <h4 class="font-bold text-sm text-[#5D4037]">王医生 (执业兽医)</h4>
+                                <p class="text-[9px] text-green-500">● 在线中</p>
+                            </div>
+                        </div>
+                        <button onclick="closeModal()" class="text-gray-400"><i data-lucide="x" class="w-5 h-5"></i></button>
+                    </div>
+                    <div id="vet-chat-history" class="flex-1 overflow-y-auto space-y-3 p-2 bg-[#FFF9F5] rounded-xl mb-3 border border-[#F1E0D6]">
+                        <div class="text-center text-[10px] text-gray-400 my-2">- 支付成功，问诊开始 -</div>
+                        <div class="flex justify-start">
+                            <div class="bg-white p-2 rounded-xl text-xs text-[#5D4037] border border-[#F1E0D6] shadow-sm max-w-[85%]">
+                                您好，我是王医生。请问宝贝出现了什么症状？可以发照片或描述一下。
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <input id="vet-input" type="text" placeholder="输入消息..." class="flex-1 bg-gray-50 rounded-xl px-3 text-xs outline-none border border-transparent focus:border-[#D2B48C]">
+                        <button onclick="sendVetMessage()" class="bg-[#D2B48C] text-white p-2 rounded-xl"><i data-lucide="send" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function sendVetMessage() {
+            const input = document.getElementById('vet-input');
+            const val = input.value.trim();
+            if(!val) return;
+            
+            const history = document.getElementById('vet-chat-history');
+            history.innerHTML += `
+                <div class="flex justify-end animate-fade">
+                    <div class="bg-[#D2B48C] text-white p-2 rounded-xl text-xs shadow-sm max-w-[85%]">${val}</div>
+                </div>
+            `;
+            input.value = '';
+            history.scrollTop = history.scrollHeight;
+
+            // 简单模拟回复
+            setTimeout(() => {
+                history.innerHTML += `
+                    <div class="flex justify-start animate-fade">
+                        <div class="bg-white p-2 rounded-xl text-xs text-[#5D4037] border border-[#F1E0D6] shadow-sm max-w-[85%]">
+                            收到。这种情况持续多久了？建议先观察一下精神状态。
+                        </div>
+                    </div>
+                `;
+                history.scrollTop = history.scrollHeight;
+            }, 1000);
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('text-[#D2B48C]'));
+            document.getElementById(`btn-${tab}`).classList.add('text-[#D2B48C]');
+            const titleEl = document.getElementById('page-title');
+            if (titleEl) {
+                titleEl.innerText = tab === 'ask' ? '问诊'
+                    : tab === 'health' ? '健康'
+                    : tab === 'knowledge' ? '科普'
+                    : tab === 'shop' ? '商城'
+                    : '我的';
+            }
+            if (tab === 'ask') renderAskTab();
+            else if (tab === 'health') renderHealthTab();
+            else if (tab === 'knowledge') renderKnowledgeTab();
+            else if (tab === 'shop') renderShopTab();
+            else if (tab === 'me') renderMeTab();
+            lucide.createIcons();
+        }
+
+        function openModal(html) {
+            const modal = document.getElementById('modal');
+            const content = document.getElementById('modal-content');
+            content.innerHTML = html + `<button onclick="closeModal()" class="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors"><i data-lucide="x" class="w-5 h-5 text-gray-400"></i></button>`;
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+
+        function initChart() {
+            const canvas = document.getElementById('weightChart');
+            if(!canvas) return;
+            new Chart(canvas.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: weightHistory.map(w => w.date.split('-').slice(1).join('/')),
+                    datasets: [{ 
+                        data: weightHistory.map(w => w.weight), 
+                        borderColor: '#D2B48C', 
+                        borderWidth: 3,
+                        pointBackgroundColor: '#FFF',
+                        pointBorderColor: '#D2B48C',
+                        tension: 0.4, 
+                        fill: true, 
+                        backgroundColor: 'rgba(210,180,140,0.1)' 
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+        
+        // 保障内联事件在所有环境下可用
+        window.openWalletModal = openWalletModal;
+        window.connectWallet = connectWallet;
+        window.disconnectWallet = disconnectWallet;
+        window.copyWalletAddress = copyWalletAddress;
+    </script>
+</body>
 </html>
